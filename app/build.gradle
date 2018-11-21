@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'key0'
+            keyPassword 'Emachinese525@'
+            storeFile file('C:/Users/Vadosss63/MyAPKStore.jks')
+            storePassword 'Emachinese525@'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.example.vadosss63.playeraudi"
@@ -17,8 +25,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
         }
     }
     externalNativeBuild {
