@@ -21,9 +21,13 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuItem;
 
-import java.io.IOException;
+import com.example.vadosss63.playeraudi.encoder_uart.EncoderByteMainHeader;
+import com.example.vadosss63.playeraudi.encoder_uart.EncoderFolders;
+import com.example.vadosss63.playeraudi.encoder_uart.EncoderMainHeader;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
@@ -31,6 +35,12 @@ import java.util.Vector;
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener
 {
     static final int REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE = 1;
+
+    final int MENU_CHANGE_DISC = 1;
+    final int MENU_SELECT_ROOT_FOLDER = 2;
+    final int MENU_SYNCHRONIZATION = 3;
+
+
     // ресивер для приема данных от сервиса
     private BroadcastReceiver m_broadcastReceiver;
 
@@ -108,14 +118,47 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private void StartUART()
     {
-
         SendInfoFoldersToComPort();
         SendInfoTracksToComPort();
-//        Intent intent = new Intent(this, UARTService.class);
-//        intent.putExtra("ff", 3442);
-//
-//        startService(intent);
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+
+        menu.add(0, MENU_CHANGE_DISC, 0, "Сменить диск");
+        menu.add(0, MENU_SELECT_ROOT_FOLDER, 0, "Выбрать папку");
+        menu.add(0, MENU_SYNCHRONIZATION, 0, "Синхронизировать");
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        switch(item.getItemId())
+        {
+
+            case MENU_SYNCHRONIZATION:
+                SendInfoFoldersToComPort();
+                SendInfoTracksToComPort();
+                break;
+
+            case MENU_CHANGE_DISC:
+
+                ChangeDisk();
+                break;
+
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void ChangeDisk()
+    {
+        Intent intent = new Intent(this, UARTService.class);
+        intent.putExtra("CMD", UARTService.CMD_CHANGE_DISC);
+        startService(intent);
     }
 
     private void CreateButtons()
@@ -251,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     {
 
         Vector<NodeDirectory> folders = m_musicFiles.GetFolders();
-        EncoderListTracks encoderListTracks = new EncoderListTracks();
+        EncoderByteMainHeader.EncoderListTracks encoderListTracks = new EncoderByteMainHeader.EncoderListTracks();
 
         for(NodeDirectory folder : folders)
         {
@@ -327,8 +370,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             intent.putExtra("track", m_currentTrack.GetNumber() + 1);
             startService(intent);
             m_adapterPlayList.notifyDataSetChanged();
-
-
         }
     }
 }

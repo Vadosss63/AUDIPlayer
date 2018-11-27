@@ -1,4 +1,4 @@
-package com.example.vadosss63.playeraudi;
+package com.example.vadosss63.playeraudi.encoder_uart;
 
 import java.util.Vector;
 

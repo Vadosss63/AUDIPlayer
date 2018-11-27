@@ -1,4 +1,4 @@
-package com.example.vadosss63.playeraudi;
+package com.example.vadosss63.playeraudi.encoder_uart;
 
 import java.util.Vector;
 
@@ -14,7 +14,7 @@ public class EncoderMainHeader
 
     public void AddMainHeader(byte command)
     {
-        byte crc = CountCRC();
+        byte crc = CheckSum();
         AddHeader();
         AddCommand(command);
         AddSize();
@@ -60,24 +60,14 @@ public class EncoderMainHeader
     }
 
     // TODO как - то расчитать CRC
-    private byte CountCRC()
+    private byte CheckSum()
     {
-        short crc = (short) 0xFF;
+        byte sum = 0;
 
         for(int i = 0; i < m_dataByte.size(); i++)
-        {
-            short dat = (short) (((short) m_dataByte.get(i) - Byte.MIN_VALUE)& 0xFF);
+            sum += m_dataByte.get(i);
 
-            for(int j = 0; j < 8; j++)
-            {
-                short aux = (short) (((dat & 0xFF) ^ (crc & 0xFF)) & 0x01);
-                if(aux == 1) crc ^= 0x18;
-                crc >>= 1;
-                crc |= (aux << 7);
-                dat >>= 1;
-            }
-        }
-        return (byte)(crc + Byte.MIN_VALUE);
+        return sum;
     }
 
 }
