@@ -3,7 +3,6 @@ package com.example.vadosss63.playeraudi;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,7 +12,6 @@ import com.example.vadosss63.playeraudi.encoder_uart.EncoderTimeTrack;
 import com.example.vadosss63.playeraudi.encoder_uart.EncoderTrack;
 
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Vector;
 
 public class UARTService extends Service
