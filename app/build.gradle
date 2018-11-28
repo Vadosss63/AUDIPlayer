@@ -13,7 +13,7 @@ android {
     defaultConfig {
         applicationId "com.example.vadosss63.playeraudi"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 26
         versionCode 3
         versionName '1.1'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -42,6 +42,7 @@ android {
     }
     productFlavors {
     }
+    buildToolsVersion '28.0.3'
 }
 
 dependencies {

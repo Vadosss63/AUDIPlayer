@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     final int MENU_SELECT_ROOT_FOLDER = 2;
     final int MENU_SYNCHRONIZATION = 3;
 
+    PowerManager.WakeLock wl;
 
     // ресивер для приема данных от сервиса
     private BroadcastReceiver m_broadcastReceiver;
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private ListView m_mainView;
 
 
+    @SuppressLint ("InvalidWakeLockTag")
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -114,6 +117,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         // регистрируем (включаем) BroadcastReceiver
         registerReceiver(m_broadcastReceiver, intentFilter);
         StartUART();
+
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
+        wl.acquire();
+
     }
 
     private void StartUART()
@@ -199,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onDestroy();
         // дерегистрируем (выключаем) BroadcastReceiver
         unregisterReceiver(m_broadcastReceiver);
+        wl.release();
     }
 
     private void CreateAdapter()
