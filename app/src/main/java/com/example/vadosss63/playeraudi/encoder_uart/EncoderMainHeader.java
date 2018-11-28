@@ -14,12 +14,12 @@ public class EncoderMainHeader
 
     public void AddMainHeader(byte command)
     {
-        byte crc = CheckSum();
         AddHeader();
         AddCommand(command);
         AddSize();
         m_dataByte.addAll(0, m_vectorHeader);
         //  добавляем в конец CRC
+        byte crc = CheckSum();
         m_dataByte.add(crc);
     }
 

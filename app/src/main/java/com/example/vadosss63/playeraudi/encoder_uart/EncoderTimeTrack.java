@@ -9,8 +9,6 @@ public class EncoderTimeTrack
     public void AddHeader(int numberFolder)
     {
         m_dataByte.clear();
-        m_dataByte.add((byte) 0x00);
-        m_dataByte.add((byte) 0x00);
         convertToByte(numberFolder);
     }
 
