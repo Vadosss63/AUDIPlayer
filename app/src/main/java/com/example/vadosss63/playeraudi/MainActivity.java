@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private FragmentTransaction m_fragmentTransaction;
     private ControllerPlayerFragment m_controllerPlayerFragment = null;
+    private ChangeFolderFragment m_changeFolderFragment = null;
 
     // ресивер для приема данных от сервиса
     private BroadcastReceiver m_broadcastReceiver;
