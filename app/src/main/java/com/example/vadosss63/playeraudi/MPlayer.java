@@ -1,5 +1,7 @@
 package com.example.vadosss63.playeraudi;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -68,7 +70,7 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
         CreatePlayer();
         CreateMusicFiles();
         CreateTime();
-        SelectTrack(1, 1);
+        SelectTrack(1, 0);
     }
 
     @Override
@@ -95,6 +97,27 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
     public void Play()
     {
         m_mediaPlayer.start();
+        ShowNotifiction();
+    }
+
+    private void ShowNotifiction()
+    {
+        Intent notIntent = new Intent(this, MainActivity.class);
+        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendInt = PendingIntent.getActivity(this, 0,
+                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Notification.Builder builder = new Notification.Builder(this);
+
+        builder.setContentIntent(pendInt)
+                .setSmallIcon(R.drawable.android_music_player_play)
+                .setTicker(m_currentTrack.GetName())
+                .setOngoing(true)
+                .setContentTitle(m_currentTrack.GetName())
+  .setContentText(m_currentTrack.GetName());
+        Notification not = builder.build();
+
+        startForeground(1, not);
     }
 
     public void Pause()
@@ -198,7 +221,7 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
                 Intent intentUart = new Intent(this, UARTService.class);
                 intentUart.putExtra("CMD", CMD_SEND_TIME);
                 intentUart.putExtra("folder", m_currentTrack.GetParentNumber());
-                intentUart.putExtra("track", m_currentTrack.GetNumber());
+                intentUart.putExtra("track", m_currentTrack.GetNumber() + 1);
                 intentUart.putExtra("time", time);
                 startService(intentUart);
             }
@@ -223,6 +246,7 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
         SetupPlayer(m_currentTrack.GetPathDir());
         // Запускаем
         m_mediaPlayer.start();
+        ShowNotifiction();
     }
 
     // Устанавливаем дорожку для запуска плеера

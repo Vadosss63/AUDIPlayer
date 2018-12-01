@@ -7,8 +7,8 @@
     android:background="@color/Black"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:id="@+id/linearLayout"
+    <FrameLayout
+        android:id="@+id/mainFragment"
         android:layout_width="wrap_content"
         android:layout_height="60dp"
         android:layout_marginStart="8dp"
@@ -20,58 +20,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/playList">
 
-        <Button
-            android:id="@+id/previousButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@android:drawable/ic_media_previous"
-            android:backgroundTint="@color/track_item_state"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/pauseButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@android:drawable/ic_media_pause"
-            android:backgroundTint="@color/track_item_state"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/playButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@android:drawable/ic_media_play"
-            android:backgroundTint="@color/track_item_state"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/nextButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:background="@android:drawable/ic_media_next"
-            android:backgroundTint="@color/track_item_state"
-            android:gravity="center" />
-
-        <TextView
-            android:id="@+id/PlayTime"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="00:00"
-            android:textColor="@color/OrangePressed"
-            android:textSize="27dp" />
-
-    </LinearLayout>
+    </FrameLayout>
 
     <ListView
         android:id="@+id/playList"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-
         android:layout_marginBottom="68dp"
         android:choiceMode="singleChoice"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
+        app:layout_constraintBottom_toTopOf="@+id/mainFragment"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />

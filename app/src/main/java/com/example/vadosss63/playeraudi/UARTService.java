@@ -42,7 +42,6 @@ public class UARTService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-//        Parser(intent);
         if(m_uartPort.GetIsUartConfigured())
             AddCMD(intent);
 
@@ -100,17 +99,7 @@ public class UARTService extends Service
     private void SendDataByte(Intent intent)
     {
         byte[] track = intent.getByteArrayExtra("Data");
-        if(m_uartPort.WriteData(track))
-        {
-            Toast toast = Toast.makeText(this, "Ok", Toast.LENGTH_SHORT);
-            toast.show();
-
-        } else
-        {
-            Toast toast = Toast.makeText(this, m_uartPort.GetTextLog(), Toast.LENGTH_SHORT);
-            toast.show();
-        }
-
+        m_uartPort.WriteData(track);
     }
 
     private void SendTime(Intent intent)
@@ -248,11 +237,8 @@ public class UARTService extends Service
     private class SenderThread extends Thread
     {
 
-        Context m_context;
-
         SenderThread(Context context)
         {
-            m_context = context;
             this.setPriority(Thread.MIN_PRIORITY);
         }
 

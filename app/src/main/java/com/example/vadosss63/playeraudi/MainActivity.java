@@ -2,6 +2,7 @@ package com.example.vadosss63.playeraudi;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,7 +19,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -35,33 +35,32 @@ import java.util.Vector;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener
 {
+    final static String BROADCAST_ACTION = "com.example.vadosss63.playeraudi";
     static final int REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE = 1;
 
     final int MENU_CHANGE_DISC = 1;
     final int MENU_SELECT_ROOT_FOLDER = 2;
     final int MENU_SYNCHRONIZATION = 3;
+    final int MENU_SEND_FOLDERS = 4;
+    final int MENU_SEND_TRACKS = 5;
 
-    PowerManager.WakeLock wl;
+    private FragmentTransaction m_fragmentTransaction;
+    private ControllerPlayerFragment m_controllerPlayerFragment = null;
 
     // ресивер для приема данных от сервиса
     private BroadcastReceiver m_broadcastReceiver;
 
-    public final static String BROADCAST_ACTION = "com.example.vadosss63.playeraudi";
-
-    private String m_dirAudioTrack;
-    // Текущий выбранный трек
-    private NodeDirectory m_currentTrack;
-    // Текущая деректория показа
-    private NodeDirectory m_currentDirectory;
     // дериктория для воспроизведения
     private MusicFiles m_musicFiles;
-    // время воспроизведения
-    private TextView m_playTime = null;
+    // Текущая деректория показа
+    private NodeDirectory m_currentDirectory;
+    // Текущий выбранный трек
+    private NodeDirectory m_currentTrack;
+
     // адаптер
     private ArrayAdapter<NodeDirectory> m_adapterPlayList;
 
     private ListView m_mainView;
-
 
     @SuppressLint ("InvalidWakeLockTag")
     @Override
@@ -77,7 +76,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         if(permissionStatus == PackageManager.PERMISSION_GRANTED)
         {
-            CreateButtons();
+            m_controllerPlayerFragment = new ControllerPlayerFragment(this);
+            ChangeState();
         }
 
 
@@ -105,9 +105,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                             m_adapterPlayList.notifyDataSetChanged();
                             ScrollToSelectTrack();
                         }
-                        SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
-                        String timeString = sdf.format(new Date(time));
-                        m_playTime.setText(timeString);
+
+                        if(m_controllerPlayerFragment != null)
+                        {
+                            m_controllerPlayerFragment.SetTime(time);
+                        }
                     }
                 }
             }
@@ -116,12 +118,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         IntentFilter intentFilter = new IntentFilter(BROADCAST_ACTION);
         // регистрируем (включаем) BroadcastReceiver
         registerReceiver(m_broadcastReceiver, intentFilter);
-        StartUART();
+    }
 
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
-        wl.acquire();
-
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        // дерегистрируем (выключаем) BroadcastReceiver
+        unregisterReceiver(m_broadcastReceiver);
     }
 
     private void StartUART()
@@ -133,10 +137,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
-
         menu.add(0, MENU_CHANGE_DISC, 0, "Сменить диск");
         menu.add(0, MENU_SELECT_ROOT_FOLDER, 0, "Выбрать папку");
         menu.add(0, MENU_SYNCHRONIZATION, 0, "Синхронизировать");
+        menu.add(0, MENU_SEND_FOLDERS, 0, "Отправить папки");
+        menu.add(0, MENU_SYNCHRONIZATION, 0, "Отправить треки");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -147,10 +152,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         {
 
             case MENU_SYNCHRONIZATION:
+                StartUART();
+                break;
+            case MENU_SEND_FOLDERS:
                 SendInfoFoldersToComPort();
+                break;
+            case MENU_SEND_TRACKS:
                 SendInfoTracksToComPort();
                 break;
-
             case MENU_CHANGE_DISC:
 
                 ChangeDisk();
@@ -162,54 +171,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return super.onOptionsItemSelected(item);
     }
 
-    private void ChangeDisk()
-    {
-        Intent intent = new Intent(this, UARTService.class);
-        intent.putExtra("CMD", UARTService.CMD_CHANGE_DISC);
-        startService(intent);
-    }
-
-    private void CreateButtons()
-    {
-        m_playTime = findViewById(R.id.PlayTime);
-        Button previousButton = findViewById(R.id.previousButton);
-        previousButton.setOnClickListener((View v)->{
-            Intent intent = new Intent(this, MPlayer.class);
-            intent.putExtra("CMD", MPlayer.CMD_PREVIOUS);
-            startService(intent);
-        });
-
-        Button playButton = findViewById(R.id.playButton);
-        playButton.setOnClickListener((View v)->{
-            Intent intent = new Intent(this, MPlayer.class);
-            intent.putExtra("CMD", MPlayer.CMD_PLAY);
-            startService(intent);
-        });
-
-        Button pauseButton = findViewById(R.id.pauseButton);
-        pauseButton.setOnClickListener((View v)->{
-            Intent intent = new Intent(this, MPlayer.class);
-            intent.putExtra("CMD", MPlayer.CMD_PAUSE);
-            startService(intent);
-        });
-
-        Button nextButton = findViewById(R.id.nextButton);
-        nextButton.setOnClickListener((View v)->{
-            Intent intent = new Intent(this, MPlayer.class);
-            intent.putExtra("CMD", MPlayer.CMD_NEXT);
-            startService(intent);
-        });
-    }
-
-    @Override
-    protected void onDestroy()
-    {
-        super.onDestroy();
-        // дерегистрируем (выключаем) BroadcastReceiver
-        unregisterReceiver(m_broadcastReceiver);
-        wl.release();
-    }
-
     private void CreateAdapter()
     {
         m_adapterPlayList = new ArrayAdapter<NodeDirectory>(this, R.layout.music_track_item, m_musicFiles.GetAllFiles(1))
@@ -219,13 +180,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent)
             {
-                ///TODO подумать как сделать круче !!!
                 if(convertView == null)
                     convertView = getLayoutInflater().inflate(R.layout.music_track_item, null);
 
                 TextView trackLabel = convertView.findViewById(R.id.textViewContent);
-//                trackLabel.setTypeface(Typeface.createFromAsset(getAssets(), "font2.ttf"));
-
                 ImageView folderImage = convertView.findViewById(R.id.folderImage);
                 ImageView folderImageBack = convertView.findViewById(R.id.folderImageBack);
                 folderImage.setVisibility(View.GONE);
@@ -241,14 +199,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 ImageView imageView = convertView.findViewById(R.id.TrackSelected);
                 TextView trackTime = convertView.findViewById(R.id.TrackTime);
-//                trackTime.setTypeface(Typeface.createFromAsset(m_home.getAssets(), "font2.ttf"));
-
                 if(m_currentTrack == getItem(position))
                 {
                     imageView.setSelected(true);
                     trackLabel.setSelected(true);
-//                    trackTime.setSelected(true);
-//                    m_playTime = trackTime;
                 } else
                 {
                     imageView.setSelected(false);
@@ -296,6 +250,47 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         m_currentDirectory = nodeDirectory;
         OpenDirectory();
+    }
+
+    private void ScrollToSelectTrack()
+    {
+        int scrollPos = m_adapterPlayList.getPosition(m_currentTrack);
+        m_mainView.smoothScrollToPosition(scrollPos);
+        m_adapterPlayList.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+    {   // обработка нажатий на элементах списка
+        NodeDirectory nodeDirectory = (NodeDirectory) (parent.getItemAtPosition(position));
+        // пока у нас есть треки мы их воспроизводим
+        if(nodeDirectory.IsFolder())
+        {
+            m_currentDirectory = nodeDirectory;
+            OpenDirectory();
+        } else
+        {
+            m_currentTrack = nodeDirectory;
+            SelectedTrack();
+            m_adapterPlayList.notifyDataSetChanged();
+        }
+    }
+
+    // Отправка выбранного трека
+    private void SelectedTrack()
+    {
+        Intent intent = new Intent(this, MPlayer.class);
+        intent.putExtra("CMD", MPlayer.CMD_SELECT_TRACK);
+        intent.putExtra("folder", m_currentTrack.GetParentNumber());
+        intent.putExtra("track", m_currentTrack.GetNumber() + 1);
+        startService(intent);
+    }
+
+    private void ChangeDisk()
+    {
+        Intent intent = new Intent(this, UARTService.class);
+        intent.putExtra("CMD", UARTService.CMD_CHANGE_DISC);
+        startService(intent);
     }
 
 
@@ -353,32 +348,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
-    /// TODO сделать скрол при возвращении
-    private void ScrollToSelectTrack()
-    {
-        int scrollPos = m_adapterPlayList.getPosition(m_currentTrack);
-        m_mainView.smoothScrollToPosition(scrollPos);
-        m_adapterPlayList.notifyDataSetChanged();
-    }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-    {   // обработка нажатий на элементах списка
-        NodeDirectory nodeDirectory = (NodeDirectory) (parent.getItemAtPosition(position));
-        // пока у нас есть треки мы их воспроизводим
-        if(nodeDirectory.IsFolder())
-        {
-            m_currentDirectory = nodeDirectory;
-            OpenDirectory();
-        } else
-        {
-            m_currentTrack = nodeDirectory;
-            Intent intent = new Intent(this, MPlayer.class);
-            intent.putExtra("CMD", MPlayer.CMD_SELECT_TRACK);
-            intent.putExtra("folder", m_currentTrack.GetParentNumber());
-            intent.putExtra("track", m_currentTrack.GetNumber() + 1);
-            startService(intent);
-            m_adapterPlayList.notifyDataSetChanged();
-        }
+    public void ChangeState()
+    {
+        m_fragmentTransaction = getFragmentManager().beginTransaction();
+        m_fragmentTransaction.replace(R.id.mainFragment, m_controllerPlayerFragment);
+        m_fragmentTransaction.commit();
     }
 }
