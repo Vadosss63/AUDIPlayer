@@ -48,6 +48,8 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
     static final public int CMD_PAUSE = 0x07;
     static final public int CMD_PREVIOUS = 0x08;
     static final public int CMD_NEXT = 0x09;
+    static final public int CMD_CHANGE_ROOT = 0x0A;
+
 
     static final public int CMD_SEND_TIME = 0x01;
 
@@ -102,19 +104,15 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
 
     private void ShowNotifiction()
     {
+        if(m_currentTrack == null)
+            return;
         Intent notIntent = new Intent(this, MainActivity.class);
         notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendInt = PendingIntent.getActivity(this, 0,
-                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification.Builder builder = new Notification.Builder(this);
 
-        builder.setContentIntent(pendInt)
-                .setSmallIcon(R.drawable.android_music_player_play)
-                .setTicker(m_currentTrack.GetName())
-                .setOngoing(true)
-                .setContentTitle(m_currentTrack.GetName())
-  .setContentText(m_currentTrack.GetName());
+        builder.setContentIntent(pendInt).setSmallIcon(R.drawable.android_music_player_play).setTicker(m_currentTrack.GetName()).setOngoing(true).setContentTitle(m_currentTrack.GetName()).setContentText(m_currentTrack.GetName());
         Notification not = builder.build();
 
         startForeground(1, not);

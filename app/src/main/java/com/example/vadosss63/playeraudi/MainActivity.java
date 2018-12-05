@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -29,8 +28,6 @@ import com.example.vadosss63.playeraudi.encoder_uart.EncoderByteMainHeader;
 import com.example.vadosss63.playeraudi.encoder_uart.EncoderFolders;
 import com.example.vadosss63.playeraudi.encoder_uart.EncoderMainHeader;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Vector;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener
@@ -43,6 +40,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     final int MENU_SYNCHRONIZATION = 3;
     final int MENU_SEND_FOLDERS = 4;
     final int MENU_SEND_TRACKS = 5;
+    final int MENU_EXIT = 6;
+
+    private String m_rootDirectory = "/Music";
 
     private FragmentTransaction m_fragmentTransaction;
     private ControllerPlayerFragment m_controllerPlayerFragment = null;
@@ -77,10 +77,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         if(permissionStatus == PackageManager.PERMISSION_GRANTED)
         {
-            m_controllerPlayerFragment = new ControllerPlayerFragment(this);
-            ChangeState();
+            m_controllerPlayerFragment = new ControllerPlayerFragment();
+            ChangeStateController();
         }
 
+        m_changeFolderFragment = new ChangeFolderFragment();
 
         CreateMusicFiles();
         m_mainView = findViewById(R.id.playList);
@@ -143,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         menu.add(0, MENU_SYNCHRONIZATION, 0, "Синхронизировать");
         menu.add(0, MENU_SEND_FOLDERS, 0, "Отправить папки");
         menu.add(0, MENU_SYNCHRONIZATION, 0, "Отправить треки");
+        menu.add(0, MENU_EXIT, 0, "Выход");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -151,7 +153,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     {
         switch(item.getItemId())
         {
-
             case MENU_SYNCHRONIZATION:
                 StartUART();
                 break;
@@ -165,11 +166,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 ChangeDisk();
                 break;
+            case MENU_SELECT_ROOT_FOLDER:
+                SelectRootFolder();
+                break;
+
+            case MENU_EXIT:
+                Intent intentMP = new Intent(this, MPlayer.class);
+                stopService(intentMP);
+                Intent intentUART = new Intent(this, UARTService.class);
+                stopService(intentUART);
+                System.exit(0);
+                break;
 
             default:
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void SelectRootFolder()
+    {
+        ChangeStateSelectRoot();
+//        String m_dirRoot = Environment.getExternalStorageDirectory().getPath();
+//        m_musicFiles = new MusicFiles(m_dirRoot);
     }
 
     private void CreateAdapter()
@@ -223,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private void CreateMusicFiles()
     {
         String m_dirRoot = Environment.getExternalStorageDirectory().getPath();
-        String dirPath = m_dirRoot + "/Music";
+        String dirPath = m_dirRoot + m_rootDirectory;
         m_musicFiles = new MusicFiles(dirPath);
     }
 
@@ -277,6 +296,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    public void ChangeRoot()
+    {
+        m_rootDirectory = m_currentDirectory.GetPathDir();
+        CreateMusicFiles();
+        Intent intent = new Intent(this, MPlayer.class);
+        intent.putExtra("CMD", MPlayer.CMD_CHANGE_ROOT);
+        intent.putExtra("root", m_rootDirectory);
+        startService(intent);
+        ChangeStateController();
+
+    }
+
+    public void CancelChangeRoot()
+    {
+//        CreateMusicFiles();
+        ChangeStateController();
+    }
+
     // Отправка выбранного трека
     private void SelectedTrack()
     {
@@ -293,7 +330,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         intent.putExtra("CMD", UARTService.CMD_CHANGE_DISC);
         startService(intent);
     }
-
 
     private void SendInfoTracksToComPort()
     {
@@ -349,8 +385,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
+    public void ChangeStateSelectRoot()
+    {
+        m_fragmentTransaction = getFragmentManager().beginTransaction();
+        m_fragmentTransaction.replace(R.id.mainFragment, m_changeFolderFragment);
+        m_fragmentTransaction.commit();
+    }
 
-    public void ChangeState()
+    public void ChangeStateController()
     {
         m_fragmentTransaction = getFragmentManager().beginTransaction();
         m_fragmentTransaction.replace(R.id.mainFragment, m_controllerPlayerFragment);

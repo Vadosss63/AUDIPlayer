@@ -268,7 +268,7 @@ public class UARTService extends Service
                                 {
                                     Parser(m_listCMD.getFirst());
                                     i++;
-                                } while(!CheckAnswer() && i < 4);
+                                } while(!CheckAnswer() && i < 2);
 
                                 if(GetAnswer() != 0)
                                 {
@@ -291,7 +291,7 @@ public class UARTService extends Service
         boolean CheckAnswer()
         {
             int i = 0;
-            while(i < 10)
+            while(i < 100)
             {
                 if(GetAnswer() != 0)
                 {
