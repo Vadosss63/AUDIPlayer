@@ -1,44 +1,31 @@
 package com.example.vadosss63.playeraudi;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
+import android.widget.RemoteViews;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Time;
 import java.util.Vector;
 
-interface MusicPlayer
-{
-    void Play();
-
-    void Pause();
-
-    void Stop();
-
-    void PlayNext();
-
-    void PlayPrevious();
-
-    boolean IsPlay();
-
-    int GetCurrentPosition();
-
-    String GetCurrentTimePlay();
-
-    boolean SelectTrack(int folder, int track);
-
-}
-
-public class MPlayer extends Service implements OnCompletionListener, MusicPlayer
+public class MPlayer extends Service implements OnCompletionListener
 {
     // Плеер для воспроизведения
     private MediaPlayer m_mediaPlayer;
@@ -99,28 +86,124 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
     public void Play()
     {
         m_mediaPlayer.start();
-        ShowNotifiction();
+        ShowNotificationPlay();
     }
 
-    private void ShowNotifiction()
+    private void ShowNotificationPlay()
     {
-        if(m_currentTrack == null)
-            return;
+        if(m_currentTrack == null) return;
+
         Intent notIntent = new Intent(this, MainActivity.class);
         notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification.Builder builder = new Notification.Builder(this);
+        RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.notification_controller_play);
+//
+//        File f = new File(m_currentTrack.GetPathDir());
+//        ContentResolver musicResolver = getContentResolver();
+//        Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+//        String[] projection = { MediaStore.Audio.Media._ID,
+//                MediaStore.Audio.Media.ARTIST,
+//                MediaStore.Audio.Media.TITLE,
+//                MediaStore.Audio.Media.DATA,
+//                MediaStore.Audio.Media.DISPLAY_NAME,
+//                MediaStore.Audio.Media.DURATION};
+//        Cursor musicCursor =  musicResolver.query(Uri.fromFile(f), projection, null, null, null);
+//        String thisTitle = "";
+//        if(musicCursor!=null && musicCursor.moveToFirst()){
+//            //get columns
+//            int titleColumn = musicCursor.getColumnIndex
+//                    (android.provider.MediaStore.Audio.Media.TITLE);
+//            int idColumn = musicCursor.getColumnIndex
+//                    (android.provider.MediaStore.Audio.Media._ID);
+//            int artistColumn = musicCursor.getColumnIndex
+//                    (android.provider.MediaStore.Audio.Media.ARTIST);
+//            //add songs to list
+//            do {
+//                long thisId = musicCursor.getLong(idColumn);
+//                thisTitle = musicCursor.getString(titleColumn);
+//                String thisArtist = musicCursor.getString(artistColumn);
+//            }
+//            while (musicCursor.moveToNext());
+//        }
 
-        builder.setContentIntent(pendInt).setSmallIcon(R.drawable.android_music_player_play).setTicker(m_currentTrack.GetName()).setOngoing(true).setContentTitle(m_currentTrack.GetName()).setContentText(m_currentTrack.GetName());
+
+        remoteViews.setTextViewText(R.id.TitleTrackPlay, m_currentTrack.GetName());
+        //       remoteViews.setTextViewText(R.id.TitleTrackPlay, thisTitle);
+        remoteViews.setOnClickPendingIntent(R.id.rootPlay, pendInt);
+
+        Intent intentNext = new Intent(this, MPlayer.class);
+        intentNext.putExtra("CMD", MPlayer.CMD_NEXT);
+        PendingIntent pendNext = PendingIntent.getService(this, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.nextPlayerPlay, pendNext);
+
+        Intent intentPrevious = new Intent(this, MPlayer.class);
+        intentPrevious.putExtra("CMD", MPlayer.CMD_PREVIOUS);
+        PendingIntent pendPrevious = PendingIntent.getService(this, 1, intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.previousPlayerPlay, pendPrevious);
+
+        Intent intentPause = new Intent(this, MPlayer.class);
+        intentPause.putExtra("CMD", MPlayer.CMD_PAUSE);
+        PendingIntent pendPause = PendingIntent.getService(this, 2, intentPause, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.pausePlayerPlay, pendPause);
+
+        Intent intentExit = new Intent(MainActivity.BROADCAST_ACTION);
+        intentExit.putExtra("CMD", MainActivity.CMD_EXIT);
+
+        PendingIntent pendExit = PendingIntent.getBroadcast(this, 3, intentExit, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.exitPlayerPlay, pendExit);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable.ic_backgraund).setCustomContentView(remoteViews).setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+
         Notification not = builder.build();
-
         startForeground(1, not);
+    }
+
+    private void ShowNotificationPause()
+    {
+        if(m_currentTrack == null) return;
+
+        Intent notIntent = new Intent(this, MainActivity.class);
+        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.notification_controller_pause);
+        remoteViews.setTextViewText(R.id.TitleTrackPause, m_currentTrack.GetName());
+        remoteViews.setOnClickPendingIntent(R.id.rootPlay, pendInt);
+
+        Intent intentNext = new Intent(this, MPlayer.class);
+        intentNext.putExtra("CMD", MPlayer.CMD_NEXT);
+        PendingIntent pendNext = PendingIntent.getService(this, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.nextPlayerPause, pendNext);
+
+        Intent intentPrevious = new Intent(this, MPlayer.class);
+        intentPrevious.putExtra("CMD", MPlayer.CMD_PREVIOUS);
+        PendingIntent pendPrevious = PendingIntent.getService(this, 1, intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.previousPlayerPause, pendPrevious);
+
+        Intent intentPlay = new Intent(this, MPlayer.class);
+        intentPlay.putExtra("CMD", MPlayer.CMD_PLAY);
+        PendingIntent pendPlay = PendingIntent.getService(this, 2, intentPlay, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.playPlayerPause, pendPlay);
+
+        Intent intentExit = new Intent(MainActivity.BROADCAST_ACTION);
+        intentExit.putExtra("CMD", MainActivity.CMD_EXIT);
+
+        PendingIntent pendExit = PendingIntent.getBroadcast(this, 3, intentExit, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.exitPlayerPause, pendExit);
+
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(R.mipmap.ic_launcher).setCustomContentView(remoteViews).setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+
+        Notification not = builder.build();
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(1, not);
     }
 
     public void Pause()
     {
         m_mediaPlayer.pause();
+        ShowNotificationPause();
     }
 
     public void Stop()
@@ -244,7 +327,7 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
         SetupPlayer(m_currentTrack.GetPathDir());
         // Запускаем
         m_mediaPlayer.start();
-        ShowNotifiction();
+        ShowNotificationPlay();
     }
 
     // Устанавливаем дорожку для запуска плеера
@@ -287,6 +370,10 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
             case CMD_PLAY:
                 Play();
                 break;
+
+            case CMD_CHANGE_ROOT:
+                ChangeRoot();
+                break;
             case CMD_SELECT_TRACK:
             {
                 int folder = intent.getIntExtra("folder", -1);
@@ -296,6 +383,19 @@ public class MPlayer extends Service implements OnCompletionListener, MusicPlaye
             }
             default:
                 break;
+        }
+    }
+
+    private void ChangeRoot()
+    {
+        SharedPreferences sPref = getSharedPreferences("Setting", MODE_PRIVATE);
+        String savedText = sPref.getString(SettingActivity.SAVED_MUSIC_PATH, "");
+
+        File file = new File(savedText);
+        // если это папка
+        if(file.isDirectory())
+        {
+            m_musicFiles = new MusicFiles(savedText);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.vadosss63.playeraudi;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +19,7 @@ class ChangeFolderFragment extends Fragment
     {
         if(m_view == null)
         {
-            m_view = inflater.inflate(R.layout.fragment_controller, null);
+            m_view = inflater.inflate(R.layout.fragment_dialog, null);
             CreateButtons();
         }
         return m_view;
@@ -28,12 +29,19 @@ class ChangeFolderFragment extends Fragment
     {
         Button previousButton = m_view.findViewById(R.id.okButton);
         previousButton.setOnClickListener((View v)->{
-            ((MainActivity) getActivity()).ChangeRoot();
+            SettingActivity sa = ((SettingActivity) getActivity());
+            sa.SaveSetting();
+            Intent intent = new Intent();
+            sa.setResult(sa.RESULT_OK, intent);
+            sa.finish();
         });
 
         Button playButton = m_view.findViewById(R.id.cancelButton);
         playButton.setOnClickListener((View v)->{
-            ((MainActivity) getActivity()).CancelChangeRoot();
+            SettingActivity sa = ((SettingActivity) getActivity());
+            Intent intent = new Intent();
+            sa.setResult(sa.RESULT_CANCELED, intent);
+            sa.finish();
         });
 
     }
