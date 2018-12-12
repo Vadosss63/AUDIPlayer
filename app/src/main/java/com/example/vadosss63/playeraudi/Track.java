@@ -62,4 +62,9 @@ public class Track implements NodeDirectory
     public boolean IsFolder() {
         return false;
     }
+
+    @Override
+    public boolean IsFolderUp() {
+        return false;
+    }
 }

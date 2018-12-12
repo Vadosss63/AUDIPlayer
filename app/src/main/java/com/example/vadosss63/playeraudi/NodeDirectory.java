@@ -9,4 +9,6 @@ public interface NodeDirectory
     int GetParentNumber();
     int GetNumberTracks();
     boolean IsFolder();
+    boolean IsFolderUp();
+
 }

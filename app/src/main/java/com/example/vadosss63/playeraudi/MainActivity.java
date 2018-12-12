@@ -32,8 +32,8 @@ import com.example.vadosss63.playeraudi.encoder_uart.EncoderMainHeader;
 import java.io.File;
 import java.util.Vector;
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener
-{
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+
     final static String BROADCAST_ACTION = "com.example.vadosss63.playeraudi";
     static final int REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE = 1;
 
@@ -62,96 +62,100 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     // Текущий выбранный трек
     private NodeDirectory m_currentTrack = null;
 
+    private Folder m_backFolder = new Folder("вверх");
+
+    private TextView m_pathTextView;
+
+
+    private String m_dirRoot = "";
+
     // адаптер
     private ArrayAdapter<NodeDirectory> m_adapterPlayList = null;
 
     private ListView m_mainView;
 
-    @SuppressLint ("InvalidWakeLockTag")
+    @SuppressLint("InvalidWakeLockTag")
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        m_controllerPlayerFragment = new ControllerPlayerFragment();
+        ChangeStateController();
+
+
         int permissionStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
 
-        if(permissionStatus != PackageManager.PERMISSION_GRANTED)
-        {
+        if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE);
         }
 
-        if(permissionStatus == PackageManager.PERMISSION_GRANTED)
-        {
-            m_controllerPlayerFragment = new ControllerPlayerFragment();
-            ChangeStateController();
-            CreateMusicFiles();
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
 
+            CreateMusicFiles();
+            m_pathTextView = findViewById(R.id.pathShow);
             m_mainView = findViewById(R.id.playList);
             CreateAdapter();
-            // создаем BroadcastReceiver
-            m_broadcastReceiver = new BroadcastReceiver()
-            {
-                // действия при получении сообщений
-                public void onReceive(Context context, Intent intent)
-                {
-                    int task = intent.getIntExtra("CMD", 0);
-                    if(task == MPlayer.CMD_SEND_TIME)
-                    {
-                        int folder = intent.getIntExtra("folder", 0);
-                        int track = intent.getIntExtra("track", 0);
-                        int time = intent.getIntExtra("time", 0);
-                        NodeDirectory trackNode = m_musicFiles.GetTrack(folder, track);
-                        if(trackNode != null)
-                        {
-                            if(m_currentTrack != trackNode)
-                            {
-                                m_currentTrack = trackNode;
-                                m_adapterPlayList.notifyDataSetChanged();
-                                ScrollToSelectTrack();
-                            }
+            CreateBroadCast();
+            ShowCurrentDir();
+        }
+    }
 
-                            if(m_controllerPlayerFragment != null)
-                            {
-                                m_controllerPlayerFragment.SetTime(time);
-                            }
+    private void CreateBroadCast() {
+        // создаем BroadcastReceiver
+        m_broadcastReceiver = new BroadcastReceiver() {
+            // действия при получении сообщений
+            public void onReceive(Context context, Intent intent) {
+                int task = intent.getIntExtra("CMD", 0);
+
+                if (task == MPlayer.CMD_SEND_TIME) {
+                    int folder = intent.getIntExtra("folder", 0);
+                    int track = intent.getIntExtra("track", 0);
+                    int time = intent.getIntExtra("time", 0);
+
+                    NodeDirectory trackNode = m_musicFiles.GetTrack(folder, track);
+                    if (trackNode != null) {
+                        if (m_currentTrack != trackNode) {
+                            m_currentTrack = trackNode;
+                            m_adapterPlayList.notifyDataSetChanged();
+                            ScrollToSelectTrack();
+                        }
+
+                        if (m_controllerPlayerFragment != null) {
+                            m_controllerPlayerFragment.SetTime(time);
                         }
                     }
-                    if(task == CMD_EXIT)
-                    {
-                        ExitApp();
-                    }
-
                 }
-            };
-            // создаем фильтр для BroadcastReceiver
-            IntentFilter intentFilter = new IntentFilter(BROADCAST_ACTION);
-            // регистрируем (включаем) BroadcastReceiver
-            registerReceiver(m_broadcastReceiver, intentFilter);
-        }
+
+                if (task == CMD_EXIT) {
+                    ExitApp();
+                }
+
+            }
+        };
+        // создаем фильтр для BroadcastReceiver
+        IntentFilter intentFilter = new IntentFilter(BROADCAST_ACTION);
+        // регистрируем (включаем) BroadcastReceiver
+        registerReceiver(m_broadcastReceiver, intentFilter);
     }
 
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         super.onDestroy();
         // дерегистрируем (выключаем) BroadcastReceiver
-        if(m_broadcastReceiver != null) unregisterReceiver(m_broadcastReceiver);
+        if (m_broadcastReceiver != null) unregisterReceiver(m_broadcastReceiver);
     }
 
 
-    private void StartUART()
-    {
+    private void StartUART() {
         SendInfoFoldersToComPort();
         SendInfoTracksToComPort();
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
+    public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(0, MENU_CHANGE_DISC, 0, "Сменить диск");
-        menu.add(0, MENU_SELECT_ROOT_FOLDER, 0, "Выбрать папку");
         menu.add(0, MENU_SYNCHRONIZATION, 0, "Синхронизировать");
         menu.add(0, MENU_SEND_FOLDERS, 0, "Отправить папки");
         menu.add(0, MENU_SYNCHRONIZATION, 0, "Отправить треки");
@@ -161,10 +165,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
-        switch(item.getItemId())
-        {
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
             case MENU_SYNCHRONIZATION:
                 StartUART();
                 break;
@@ -181,8 +183,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                 break;
 
-            case MENU_SETTING:
-            {
+            case MENU_SETTING: {
                 Intent intent = new Intent(this, SettingActivity.class);
                 startActivityForResult(intent, 1);
                 break;
@@ -197,8 +198,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return super.onOptionsItemSelected(item);
     }
 
-    private void ExitApp()
-    {
+    private void ExitApp() {
         Intent intentMP = new Intent(this, MPlayer.class);
         stopService(intentMP);
         Intent intentUART = new Intent(this, UARTService.class);
@@ -206,44 +206,40 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         System.exit(0);
     }
 
-    private void CreateAdapter()
-    {
-        m_adapterPlayList = new ArrayAdapter<NodeDirectory>(this, R.layout.music_track_item, m_musicFiles.GetAllFiles(1))
-        {
-            @SuppressLint ("InflateParams")
+    private void CreateAdapter() {
+
+        m_currentDirectory = m_musicFiles.GetFolders().get(0);
+
+        m_adapterPlayList = new ArrayAdapter<NodeDirectory>(this, R.layout.music_track_item, m_musicFiles.GetAllFiles(1)) {
+            @SuppressLint("InflateParams")
             @NonNull
             @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent)
-            {
-                if(convertView == null)
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+
+                if (getItem(position).IsFolder()) {
+                    if (getItem(position).IsFolderUp()) {
+                        convertView = getLayoutInflater().inflate(R.layout.folder_up_item, null);
+                    } else {
+                        convertView = getLayoutInflater().inflate(R.layout.folder_item, null);
+                        TextView titleFolder = convertView.findViewById(R.id.titleFolder);
+                        titleFolder.setText(getItem(position).GetName());
+                    }
+                } else {
+
                     convertView = getLayoutInflater().inflate(R.layout.music_track_item, null);
 
-                TextView trackLabel = convertView.findViewById(R.id.textViewContent);
-                ImageView folderImage = convertView.findViewById(R.id.folderImage);
-                ImageView folderImageBack = convertView.findViewById(R.id.folderImageBack);
-                folderImage.setVisibility(View.GONE);
-                folderImageBack.setVisibility(View.GONE);
-                trackLabel.setText(getItem(position).GetName());
+                    TextView trackLabel = convertView.findViewById(R.id.titleTrack);
 
+                    ImageView imageView = convertView.findViewById(R.id.TrackSelected);
+                    trackLabel.setText(getItem(position).GetName());
 
-                if(getItem(position).IsFolder())
-                {
-                    if(trackLabel.getText() == "вверх") folderImageBack.setVisibility(View.VISIBLE);
-                    else folderImage.setVisibility(View.VISIBLE);
-                }
-
-                ImageView imageView = convertView.findViewById(R.id.TrackSelected);
-                TextView trackTime = convertView.findViewById(R.id.TrackTime);
-                if(m_currentTrack == getItem(position))
-                {
-                    imageView.setSelected(true);
-                    trackLabel.setSelected(true);
-                } else
-                {
-                    imageView.setSelected(false);
-                    trackLabel.setSelected(false);
-                    trackTime.setSelected(false);
-                    trackTime.setText("");
+                    if (m_currentTrack == getItem(position)) {
+                        imageView.setSelected(true);
+                        trackLabel.setSelected(true);
+                    } else {
+                        imageView.setSelected(false);
+                        trackLabel.setSelected(false);
+                    }
                 }
                 return convertView;
             }
@@ -254,65 +250,63 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         ScrollToSelectTrack();
     }
 
-    private void CreateMusicFiles()
-    {
-        String m_dirRoot = Environment.getExternalStorageDirectory().getPath();
+    private void CreateMusicFiles() {
+        m_dirRoot = Environment.getExternalStorageDirectory().getPath();
         String dirPath = m_dirRoot + m_rootDirectory;
         m_musicFiles = new MusicFiles(dirPath);
     }
 
-    private void OpenDirectory()
-    {
+    private void OpenDirectory() {
         m_adapterPlayList.clear();
         Vector<NodeDirectory> files = new Vector<>();
         NodeDirectory back = m_musicFiles.GetParentFolder(m_currentDirectory);
-        if(back != null)
-        {
-            back.SetName("вверх");
-            files.add(back);
+        if (back != null) {
+
+            m_backFolder.setPath(back.GetPathDir());
+            m_backFolder.setNumber(back.GetNumber());
+            m_backFolder.setParentNumber(back.GetParentNumber());
+            m_backFolder.setIsFolderUp(true);
+            files.add(m_backFolder);
+
         }
         files.addAll(m_musicFiles.GetAllFiles(m_currentDirectory.GetNumber()));
         m_adapterPlayList.addAll(files);
     }
 
-    private void BackToParentFolder(NodeDirectory trackNode)
-    {
-        NodeDirectory nodeDirectory = m_musicFiles.GetParentFolder(trackNode);
-        // Преходим в папку
-        if(nodeDirectory == null) return;
-
-        if(nodeDirectory == m_currentDirectory) return;
-
-        m_currentDirectory = nodeDirectory;
-        OpenDirectory();
-    }
-
-    private void ScrollToSelectTrack()
-    {
+    private void ScrollToSelectTrack() {
         int scrollPos = m_adapterPlayList.getPosition(m_currentTrack);
         m_mainView.smoothScrollToPosition(scrollPos);
         m_adapterPlayList.notifyDataSetChanged();
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-    {   // обработка нажатий на элементах списка
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {   // обработка нажатий на элементах списка
         NodeDirectory nodeDirectory = (NodeDirectory) (parent.getItemAtPosition(position));
         // пока у нас есть треки мы их воспроизводим
-        if(nodeDirectory.IsFolder())
-        {
-            m_currentDirectory = nodeDirectory;
+        if (nodeDirectory.IsFolder()) {
+
+            if (nodeDirectory.IsFolderUp()) {
+                m_currentDirectory = m_musicFiles.GetFolders().get(nodeDirectory.GetNumber() - 1);
+            } else {
+                m_currentDirectory = nodeDirectory;
+            }
+
+            ShowCurrentDir();
             OpenDirectory();
-        } else
-        {
+        } else {
             m_currentTrack = nodeDirectory;
             SelectedTrack();
             m_adapterPlayList.notifyDataSetChanged();
         }
     }
 
-    public void ChangeRoot()
-    {
+    private void ShowCurrentDir() {
+        String text = m_currentDirectory.GetPathDir().replace(m_dirRoot, "");
+        m_pathTextView.setText(text);
+    }
+
+    public void ChangeRoot() {
+
         m_musicFiles = new MusicFiles(m_rootDirectory);
 
         Intent intent = new Intent(this, MPlayer.class);
@@ -321,32 +315,27 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if(data == null)
-        {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (data == null) {
             return;
         }
 
-        if(resultCode == RESULT_OK)
-        {
+        if (resultCode == RESULT_OK) {
             SharedPreferences sPref = getSharedPreferences("Setting", MODE_PRIVATE);
             String savedText = sPref.getString(SettingActivity.SAVED_MUSIC_PATH, "");
             File file = new File(savedText);
             // если это папка
-            if(file.isDirectory())
-            {
+            if (file.isDirectory()) {
                 m_rootDirectory = savedText;
                 ChangeRoot();
                 CreateAdapter();
             }
         }
-
     }
 
     // Отправка выбранного трека
-    private void SelectedTrack()
-    {
+    private void SelectedTrack() {
         Intent intent = new Intent(this, MPlayer.class);
         intent.putExtra("CMD", MPlayer.CMD_SELECT_TRACK);
         intent.putExtra("folder", m_currentTrack.GetParentNumber());
@@ -354,25 +343,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         startService(intent);
     }
 
-    private void ChangeDisk()
-    {
+    private void ChangeDisk() {
         Intent intent = new Intent(this, UARTService.class);
         intent.putExtra("CMD", UARTService.CMD_CHANGE_DISC);
         startService(intent);
     }
 
-    private void SendInfoTracksToComPort()
-    {
+    private void SendInfoTracksToComPort() {
 
         Vector<NodeDirectory> folders = m_musicFiles.GetFolders();
         EncoderByteMainHeader.EncoderListTracks encoderListTracks = new EncoderByteMainHeader.EncoderListTracks();
 
-        for(NodeDirectory folder : folders)
-        {
+        for (NodeDirectory folder : folders) {
             encoderListTracks.AddHeader(folder.GetNumber());
             Vector<NodeDirectory> tracks = m_musicFiles.GetTracks(folder.GetNumber());
-            for(NodeDirectory track : tracks)
-            {
+            for (NodeDirectory track : tracks) {
                 /// TODO уточнить
                 encoderListTracks.AddTrackNumber(track.GetNumber() + 1);
                 encoderListTracks.AddName(track.GetName());
@@ -391,18 +376,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    private void SendInfoFoldersToComPort()
-    {
+    private void SendInfoFoldersToComPort() {
+
         Vector<NodeDirectory> folders = m_musicFiles.GetFolders();
         EncoderFolders encoderFolders = new EncoderFolders();
         encoderFolders.AddHeader();
-        for(NodeDirectory folder : folders)
-        {
+
+        for (NodeDirectory folder : folders) {
             encoderFolders.AddName(folder.GetName());
             encoderFolders.AddNumber(folder.GetNumber());
             encoderFolders.AddNumberTracks(folder.GetNumberTracks());
             encoderFolders.AddParentNumber(folder.GetParentNumber());
         }
+
         encoderFolders.AddEnd();
         // Добавляем заголовок
         EncoderMainHeader headerData = new EncoderMainHeader(encoderFolders.GetVectorByte());
@@ -415,8 +401,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
-    public void ChangeStateController()
-    {
+    public void ChangeStateController() {
         FragmentTransaction m_fragmentTransaction = getFragmentManager().beginTransaction();
         m_fragmentTransaction.replace(R.id.mainFragment, m_controllerPlayerFragment);
         m_fragmentTransaction.commit();

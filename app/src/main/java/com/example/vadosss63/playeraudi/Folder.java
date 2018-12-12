@@ -6,6 +6,7 @@ public class Folder implements NodeDirectory
     private int number;
     private int parentNumber;
     private int numberTracks;
+    private boolean m_isFolderUp = false;
     private String m_path;
 
     public Folder(String name)
@@ -28,6 +29,11 @@ public class Folder implements NodeDirectory
     public void setNumberTracks(int numberTracks) {
         this.numberTracks = numberTracks;
     }
+
+    public void setIsFolderUp(boolean isFolderUp) {
+        this.m_isFolderUp = isFolderUp;
+    }
+
 
     @Override
     public void SetName(String name)
@@ -68,5 +74,10 @@ public class Folder implements NodeDirectory
     public boolean IsFolder()
     {
         return true;
+    }
+
+    @Override
+    public boolean IsFolderUp() {
+        return m_isFolderUp;
     }
 }

@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:background="@color/Black"
     android:orientation="vertical"
-    tools:context=".SettingActivity">
+    tools:context=".SettingActivity"
+    tools:ignore="MissingDefaultResource">
 
     <TextView
         android:id="@+id/PathMusicFiles"
@@ -14,10 +15,9 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="20dp"
 
-        android:textSize="25sp"
-        android:textColor="@color/OrangePressed"
-        android:text="TextView"
-        />
+        android:text="Путь:"
+        android:textColor="@color/White"
+        android:textSize="25sp" />
 
     <ListView
         android:id="@+id/pathList"
@@ -34,8 +34,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:orientation="horizontal"
-        >
+        android:orientation="horizontal">
+
 
     </FrameLayout>
 

@@ -1,5 +1,6 @@
 package com.example.vadosss63.playeraudi;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -15,6 +16,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -25,7 +27,7 @@ import java.io.IOException;
 import java.sql.Time;
 import java.util.Vector;
 
-public class MPlayer extends Service implements OnCompletionListener
+public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener
 {
     // Плеер для воспроизведения
     private MediaPlayer m_mediaPlayer;
@@ -243,6 +245,7 @@ public class MPlayer extends Service implements OnCompletionListener
     }
 
     // получение времени
+    @SuppressLint("DefaultLocale")
     public String GetCurrentTimePlay()
     {
         String timeString = "00:00";
@@ -337,6 +340,7 @@ public class MPlayer extends Service implements OnCompletionListener
         {
             m_mediaPlayer.reset();
             m_mediaPlayer.setDataSource(audio);
+            m_mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             m_mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             m_mediaPlayer.prepare();
 
@@ -397,5 +401,10 @@ public class MPlayer extends Service implements OnCompletionListener
         {
             m_musicFiles = new MusicFiles(savedText);
         }
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+        return false;
     }
 }

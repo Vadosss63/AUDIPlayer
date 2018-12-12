@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
@@ -27,7 +26,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemClick
     private ListView m_pathView = null;
 
     private String root = "/"; // символ для корневого элемента
-    private TextView mPathTextView;
+    private TextView m_pathTextView;
     private String m_pathMusicFiles;
 
     final public static String SAVED_MUSIC_PATH = "music_path";
@@ -44,7 +43,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemClick
         m_pathView = findViewById(R.id.pathList);
         m_pathView.setOnItemClickListener(this);
 
-        mPathTextView = (TextView) findViewById(R.id.PathMusicFiles);
+        m_pathTextView = (TextView) findViewById(R.id.PathMusicFiles);
 
         ChangeStateSelectRoot();
         root = Environment.getExternalStorageDirectory().getPath();
@@ -62,7 +61,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemClick
 
     private void getDir(String dirPath)
     {
-        mPathTextView.setText("Путь: " + dirPath); // где мы сейчас
+        m_pathTextView.setText("Путь: " + dirPath); // где мы сейчас
         m_pathMusicFiles = dirPath;
         List<String> itemList = new ArrayList<>();
         m_pathList = new ArrayList<>();
