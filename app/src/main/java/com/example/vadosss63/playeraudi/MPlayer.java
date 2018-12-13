@@ -20,6 +20,7 @@ import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat.Builder;
 import android.widget.RemoteViews;
 
 import java.io.File;
@@ -27,8 +28,7 @@ import java.io.IOException;
 import java.sql.Time;
 import java.util.Vector;
 
-public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener
-{
+public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener {
     // Плеер для воспроизведения
     private MediaPlayer m_mediaPlayer;
 
@@ -55,8 +55,7 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     private String m_rootPath = "/Music";
 
     @Override
-    public void onCreate()
-    {
+    public void onCreate() {
         super.onCreate();
         CreatePlayer();
         CreateMusicFiles();
@@ -65,35 +64,30 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId)
-    {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         ParserCMD(intent);
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         m_mediaPlayer.release();
         super.onDestroy();
     }
 
     @Nullable
     @Override
-    public IBinder onBind(Intent intent)
-    {
+    public IBinder onBind(Intent intent) {
         return null;
     }
 
-    public void Play()
-    {
+    public void Play() {
         m_mediaPlayer.start();
         ShowNotificationPlay();
     }
 
-    private void ShowNotificationPlay()
-    {
-        if(m_currentTrack == null) return;
+    private void ShowNotificationPlay() {
+        if (m_currentTrack == null) return;
 
         Intent notIntent = new Intent(this, MainActivity.class);
         notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -129,8 +123,10 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
 //            while (musicCursor.moveToNext());
 //        }
 
+        String title = m_currentTrack.GetName().replace("_", " ");
+        title = title.replace(".mp3", "");
 
-        remoteViews.setTextViewText(R.id.TitleTrackPlay, m_currentTrack.GetName());
+        remoteViews.setTextViewText(R.id.TitleTrackPlay, title);
         //       remoteViews.setTextViewText(R.id.TitleTrackPlay, thisTitle);
         remoteViews.setOnClickPendingIntent(R.id.rootPlay, pendInt);
 
@@ -155,22 +151,28 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         PendingIntent pendExit = PendingIntent.getBroadcast(this, 3, intentExit, PendingIntent.FLAG_UPDATE_CURRENT);
         remoteViews.setOnClickPendingIntent(R.id.exitPlayerPlay, pendExit);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(R.drawable.ic_backgraund).setCustomContentView(remoteViews).setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+        Builder builder = new Builder(this);
+        builder.setSmallIcon(R.drawable.song_image);
+        builder.setCustomContentView(remoteViews);
+        builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
 
         Notification not = builder.build();
         startForeground(1, not);
     }
 
-    private void ShowNotificationPause()
-    {
-        if(m_currentTrack == null) return;
+    private void ShowNotificationPause() {
+        if (m_currentTrack == null) return;
 
         Intent notIntent = new Intent(this, MainActivity.class);
         notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendInt = PendingIntent.getActivity(this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.notification_controller_pause);
-        remoteViews.setTextViewText(R.id.TitleTrackPause, m_currentTrack.GetName());
+
+        String title = m_currentTrack.GetName().replace("_", " ");
+        title = title.replace(".mp3", "");
+
+        remoteViews.setTextViewText(R.id.TitleTrackPause, title);
         remoteViews.setOnClickPendingIntent(R.id.rootPlay, pendInt);
 
         Intent intentNext = new Intent(this, MPlayer.class);
@@ -195,47 +197,43 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         remoteViews.setOnClickPendingIntent(R.id.exitPlayerPause, pendExit);
 
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(R.mipmap.ic_launcher).setCustomContentView(remoteViews).setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+        Builder builder = new Builder(this);
+        builder.setSmallIcon(R.drawable.song_image);
+        builder.setCustomContentView(remoteViews);
+        builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
 
         Notification not = builder.build();
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(1, not);
+        if (notificationManager != null)
+            notificationManager.notify(1, not);
     }
 
-    public void Pause()
-    {
+    public void Pause() {
         m_mediaPlayer.pause();
         ShowNotificationPause();
     }
 
-    public void Stop()
-    {
+    public void Stop() {
         m_mediaPlayer.stop();
     }
 
-    public void PlayNext()
-    {
-        if(m_currentTrack != null)
-        {
+    public void PlayNext() {
+        if (m_currentTrack != null) {
             int indexTrack = m_currentTrack.GetNumber() + 1;
             SelectTrack(m_currentTrack.GetParentNumber(), indexTrack);
         }
     }
 
-    public void PlayPrevious()
-    {
-        if(m_currentTrack != null)
-        {
+    public void PlayPrevious() {
+        if (m_currentTrack != null) {
             int indexTrack = m_currentTrack.GetNumber() - 1;
             SelectTrack(m_currentTrack.GetParentNumber(), indexTrack);
         }
     }
 
-    public boolean SelectTrack(int folder, int track)
-    {
+    public boolean SelectTrack(int folder, int track) {
         NodeDirectory trackNode = m_musicFiles.GetTrack(folder, track);
-        if(trackNode != null)
-        {
+        if (trackNode != null) {
             // запускаем трек
             m_currentTrack = trackNode;
             StartPlayer();
@@ -246,54 +244,45 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
 
     // получение времени
     @SuppressLint("DefaultLocale")
-    public String GetCurrentTimePlay()
-    {
+    public String GetCurrentTimePlay() {
         String timeString = "00:00";
-        if(m_mediaPlayer.isPlaying())
-        {
+        if (m_mediaPlayer.isPlaying()) {
             Time time = new Time(m_mediaPlayer.getCurrentPosition());
             timeString = String.format("%02d:%02d", time.getMinutes(), time.getSeconds());
         }
         return timeString;
     }
 
-    public boolean IsPlay()
-    {
+    public boolean IsPlay() {
         return m_mediaPlayer.isPlaying();
     }
 
     // получение в времени в мсек
-    public int GetCurrentPosition()
-    {
+    public int GetCurrentPosition() {
         return m_mediaPlayer.getCurrentPosition();
     }
 
     // возврощает текущий трек
-    public NodeDirectory GetCurrentTrack()
-    {
+    public NodeDirectory GetCurrentTrack() {
         return m_currentTrack;
     }
 
     // Возврощает список файлов из папки
-    public Vector<NodeDirectory> GetPlayList(int folder)
-    {
+    public Vector<NodeDirectory> GetPlayList(int folder) {
         return m_musicFiles.GetAllFiles(folder);
     }
 
     // открывает деректорию с файлами
-    private void CreateMusicFiles()
-    {
+    private void CreateMusicFiles() {
         String m_dirRoot = Environment.getExternalStorageDirectory().getPath();
         String dirPath = m_dirRoot + m_rootPath;
         m_musicFiles = new MusicFiles(dirPath);
     }
 
-    private void CreateTime()
-    {
-        m_runnable = ()->{
+    private void CreateTime() {
+        m_runnable = () -> {
 
-            if(m_mediaPlayer.isPlaying())
-            {
+            if (m_mediaPlayer.isPlaying()) {
                 int time = m_mediaPlayer.getCurrentPosition();
                 Intent intent = new Intent(MainActivity.BROADCAST_ACTION);
                 intent.putExtra("CMD", CMD_SEND_TIME);
@@ -317,15 +306,13 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     // создает плеер
-    private void CreatePlayer()
-    {
+    private void CreatePlayer() {
         m_mediaPlayer = new MediaPlayer();
         // Устанавливаем наблюдателя по оканчанию дорожки
         m_mediaPlayer.setOnCompletionListener(this);
     }
 
-    private void StartPlayer()
-    {
+    private void StartPlayer() {
         // Устанавливаем дорожу
         SetupPlayer(m_currentTrack.GetPathDir());
         // Запускаем
@@ -334,34 +321,28 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     // Устанавливаем дорожку для запуска плеера
-    private void SetupPlayer(String audio)
-    {
-        try
-        {
+    private void SetupPlayer(String audio) {
+        try {
             m_mediaPlayer.reset();
             m_mediaPlayer.setDataSource(audio);
             m_mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             m_mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             m_mediaPlayer.prepare();
 
-        } catch(IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void onCompletion(MediaPlayer mp)
-    {
+    public void onCompletion(MediaPlayer mp) {
         PlayNext();
     }
 
 
-    private void ParserCMD(Intent intent)
-    {
+    private void ParserCMD(Intent intent) {
         int cmd = intent.getIntExtra("CMD", 0);
-        switch(cmd)
-        {
+        switch (cmd) {
             case CMD_NEXT:
                 PlayNext();
                 break;
@@ -378,8 +359,7 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
             case CMD_CHANGE_ROOT:
                 ChangeRoot();
                 break;
-            case CMD_SELECT_TRACK:
-            {
+            case CMD_SELECT_TRACK: {
                 int folder = intent.getIntExtra("folder", -1);
                 int track = intent.getIntExtra("track", 0) - 1;
                 SelectTrack(folder, track);
@@ -390,15 +370,13 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         }
     }
 
-    private void ChangeRoot()
-    {
+    private void ChangeRoot() {
         SharedPreferences sPref = getSharedPreferences("Setting", MODE_PRIVATE);
         String savedText = sPref.getString(SettingActivity.SAVED_MUSIC_PATH, "");
 
         File file = new File(savedText);
         // если это папка
-        if(file.isDirectory())
-        {
+        if (file.isDirectory()) {
             m_musicFiles = new MusicFiles(savedText);
         }
     }

@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootPause"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="8dp"
-    android:layout_marginEnd="8dp"
-    android:layout_marginBottom="8dp"
-    android:id="@+id/rootPause"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     tools:ignore="MissingDefaultResource">
 
     <TextView
@@ -15,53 +12,42 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:layout_marginEnd="8dp"
         android:gravity="center"
-        android:backgroundTint="@color/Black" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:textColor="@color/Black"  />
 
 
-        <Button
-            android:id="@+id/exitPlayerPause"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="@android:drawable/ic_menu_close_clear_cancel"
-            android:backgroundTint="@color/Black"
-            android:gravity="center" />
+    <Button
+        android:id="@+id/previousPlayerPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:drawable/ic_media_previous"
+        android:backgroundTint="@color/Black"
+        android:gravity="center" />
 
+    <Button
+        android:id="@+id/playPlayerPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:drawable/ic_media_play"
+        android:backgroundTint="@color/Black"
+        android:gravity="center" />
 
-        <TextView
-            android:id="@+id/textViewPause"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
+    <Button
+        android:id="@+id/nextPlayerPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_weight="0"
+        android:background="@android:drawable/ic_media_next"
+        android:backgroundTint="@color/Black"
+        android:gravity="center" />
 
-        <Button
-            android:id="@+id/previousPlayerPause"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@android:drawable/ic_media_previous"
-            android:backgroundTint="@color/Black"
-            android:gravity="center" />
-        <Button
-            android:id="@+id/playPlayerPause"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@android:drawable/ic_media_play"
-            android:backgroundTint="@color/Black"
-            android:gravity="center" />
+    <Button
+        android:id="@+id/exitPlayerPause"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@android:drawable/ic_menu_close_clear_cancel"
+        android:backgroundTint="@color/Black"
+        android:gravity="center" />
 
-        <Button
-            android:id="@+id/nextPlayerPause"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_weight="0"
-            android:background="@android:drawable/ic_media_next"
-            android:backgroundTint="@color/Black"
-            android:gravity="center" />
-
-    </LinearLayout>
 </LinearLayout>

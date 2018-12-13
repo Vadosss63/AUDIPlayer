@@ -3,7 +3,7 @@
 <resources>
     <usb-device
         product-id="688"
-        vendor-id="1118"></usb-device>
+        vendor-id="1118" />
     <usb-device
         product-id="24577"
         vendor-id="1027" /> <!-- FT232RL -->

@@ -11,7 +11,7 @@
         android:layout_width="40dp"
         android:layout_height="28dp"
         android:adjustViewBounds="true"
-        android:src="@drawable/folder" />
+        android:src="@drawable/folder"/>
 
     <TextView
         android:id="@+id/titleFolder"

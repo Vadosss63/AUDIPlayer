@@ -231,7 +231,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     TextView trackLabel = convertView.findViewById(R.id.titleTrack);
 
                     ImageView imageView = convertView.findViewById(R.id.TrackSelected);
-                    trackLabel.setText(getItem(position).GetName());
+
+                    String title = getItem(position).GetName().replace("_", " ");
+                    title = title.replace(".mp3", "");
+                    trackLabel.setText(title);
 
                     if (m_currentTrack == getItem(position)) {
                         imageView.setSelected(true);
