@@ -1,36 +1,34 @@
 package com.example.vadosss63.playeraudi;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ContentResolver;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
-import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
+import android.view.KeyEvent;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Time;
-import java.util.Vector;
 
 public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener {
-    // Плеер для воспроизведения
-    private MediaPlayer m_mediaPlayer;
+
 
     static final public int CMD_SELECT_TRACK = 0x05;
     static final public int CMD_PLAY = 0x06;
@@ -38,9 +36,18 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     static final public int CMD_PREVIOUS = 0x08;
     static final public int CMD_NEXT = 0x09;
     static final public int CMD_CHANGE_ROOT = 0x0A;
-
-
     static final public int CMD_SEND_TIME = 0x01;
+
+    // Плеер для воспроизведения
+    private MediaPlayer m_mediaPlayer;
+
+    NoisyAudioStreamReceiver m_noisyAudioStreamReceiver;
+
+    // аудио фокус
+    AudioManager m_audioManager;
+    AFListener m_afLiListener = new AFListener();
+
+//    RemoteControlReceiver m_remoteControlReceiver = new RemoteControlReceiver();
 
     private Handler m_handler;
     private Runnable m_runnable;
@@ -53,14 +60,24 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
 
     // корневая папка для воспроизведения музыки
     private String m_rootPath = "/Music";
+    private ComponentName mReceiverComponent;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        m_audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        m_noisyAudioStreamReceiver = new NoisyAudioStreamReceiver();
+
+//        m_audioManager.registerMediaButtonEventReceiver();
+
         CreatePlayer();
         CreateMusicFiles();
         CreateTime();
         SelectTrack(1, 0);
+
+        RegisterRemountControl();
+
     }
 
     @Override
@@ -71,19 +88,25 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
 
     @Override
     public void onDestroy() {
-        m_mediaPlayer.release();
         super.onDestroy();
+
+        if (m_mediaPlayer != null)
+            m_mediaPlayer.release();
+
+        AbandonAudioFocus();
+        StopPlayback();
+//        UnregisterRemountControl();
+    }
+
+    private void AbandonAudioFocus() {
+        if (m_afLiListener != null)
+            m_audioManager.abandonAudioFocus(m_afLiListener);
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    public void Play() {
-        m_mediaPlayer.start();
-        ShowNotificationPlay();
     }
 
     private void ShowNotificationPlay() {
@@ -208,13 +231,25 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
             notificationManager.notify(1, not);
     }
 
+    public void Play() {
+
+        StartPlayback();
+        m_audioManager.requestAudioFocus(m_afLiListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        m_mediaPlayer.start();
+        ShowNotificationPlay();
+    }
+
     public void Pause() {
+        StopPlayback();
         m_mediaPlayer.pause();
         ShowNotificationPause();
     }
 
     public void Stop() {
+        StopPlayback();
+        AbandonAudioFocus();
         m_mediaPlayer.stop();
+        ShowNotificationPause();
     }
 
     public void PlayNext() {
@@ -242,15 +277,10 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         return false;
     }
 
-    // получение времени
-    @SuppressLint("DefaultLocale")
-    public String GetCurrentTimePlay() {
-        String timeString = "00:00";
-        if (m_mediaPlayer.isPlaying()) {
-            Time time = new Time(m_mediaPlayer.getCurrentPosition());
-            timeString = String.format("%02d:%02d", time.getMinutes(), time.getSeconds());
-        }
-        return timeString;
+    private void StartPlayer() {
+        // Устанавливаем дорожу
+        SetupPlayer(m_currentTrack.GetPathDir());
+        Play();
     }
 
     public boolean IsPlay() {
@@ -262,14 +292,9 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         return m_mediaPlayer.getCurrentPosition();
     }
 
-    // возврощает текущий трек
-    public NodeDirectory GetCurrentTrack() {
-        return m_currentTrack;
-    }
-
-    // Возврощает список файлов из папки
-    public Vector<NodeDirectory> GetPlayList(int folder) {
-        return m_musicFiles.GetAllFiles(folder);
+    // Установка гомкости плеера
+    public void SetVolume(float leftVolume, float rightVolume) {
+        m_mediaPlayer.setVolume(leftVolume, rightVolume);
     }
 
     // открывает деректорию с файлами
@@ -282,8 +307,8 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     private void CreateTime() {
         m_runnable = () -> {
 
-            if (m_mediaPlayer.isPlaying()) {
-                int time = m_mediaPlayer.getCurrentPosition();
+            if (IsPlay()) {
+                int time = GetCurrentPosition();
                 Intent intent = new Intent(MainActivity.BROADCAST_ACTION);
                 intent.putExtra("CMD", CMD_SEND_TIME);
                 intent.putExtra("folder", m_currentTrack.GetParentNumber());
@@ -312,14 +337,6 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         m_mediaPlayer.setOnCompletionListener(this);
     }
 
-    private void StartPlayer() {
-        // Устанавливаем дорожу
-        SetupPlayer(m_currentTrack.GetPathDir());
-        // Запускаем
-        m_mediaPlayer.start();
-        ShowNotificationPlay();
-    }
-
     // Устанавливаем дорожку для запуска плеера
     private void SetupPlayer(String audio) {
         try {
@@ -338,7 +355,6 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     public void onCompletion(MediaPlayer mp) {
         PlayNext();
     }
-
 
     private void ParserCMD(Intent intent) {
         int cmd = intent.getIntExtra("CMD", 0);
@@ -385,4 +401,124 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
         return false;
     }
+
+    class AFListener implements AudioManager.OnAudioFocusChangeListener {
+
+        @Override
+        public void onAudioFocusChange(int i) {
+
+            switch (i) {
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    Pause();
+//                    UnregisterRemountControl();
+
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    Pause();
+//                    UnregisterRemountControl();
+
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    SetVolume(0.5f, 0.5f);
+                    break;
+
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    if (!IsPlay())
+                        Play();
+                    SetVolume(1.0f, 1.0f);
+//                    RegisterRemountControl();
+                    break;
+            }
+        }
+    }
+
+    private void RegisterRemountControl() {
+
+        try {
+
+//            mReceiverComponent = new ComponentName(this, RemoteControlReceiver.class);
+//            m_audioManager.registerMediaButtonEventReceiver(mReceiverComponent);
+
+//           m_audioManager.registerMediaButtonEventReceiver(new ComponentName(getPackageName(), RemoteControlReceiver.class.getName()));
+//            registerReceiver(m_remoteControlReceiver, intentFilterRemoteControl);
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    private void UnregisterRemountControl() {
+        try {
+//            unregisterReceiver(m_remoteControlReceiver);
+//            m_audioManager.unregisterMediaButtonEventReceiver(mReceiverComponent);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    private class NoisyAudioStreamReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                Pause();
+            }
+        }
+    }
+
+    private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+
+    private IntentFilter intentFilterRemoteControl = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
+
+    private void StartPlayback() {
+        try {
+            registerReceiver(m_noisyAudioStreamReceiver, intentFilter);
+        } catch (IllegalArgumentException ignored) {
+
+        }
+    }
+
+    private void StopPlayback() {
+        try {
+            unregisterReceiver(m_noisyAudioStreamReceiver);
+        } catch (IllegalArgumentException e) {
+
+        }
+    }
+
+    public class RemoteControlReceiver extends BroadcastReceiver {
+
+
+        // Constructor is mandatory
+        public RemoteControlReceiver ()
+        {
+            super ();
+        }
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+                KeyEvent key = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                Toast.makeText(context, intent.getAction(), Toast.LENGTH_SHORT);
+
+//                switch (key.getKeyCode()) {
+//
+//                    case KeyEvent.KEYCODE_MEDIA_PLAY:
+//                        Play();
+//                        break;
+//
+//                    case KeyEvent.KEYCODE_MEDIA_NEXT:
+//                        PlayNext();
+//                        break;
+//
+//                    case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+//                        PlayPrevious();
+//                        break;
+//
+//                    case KeyEvent.KEYCODE_MEDIA_PAUSE:
+//                        Pause();
+//                        break;
+//                }
+            }
+        }
+    }
+
 }

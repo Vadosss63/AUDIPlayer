@@ -74,7 +74,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private ListView m_mainView;
 
-    @SuppressLint("InvalidWakeLockTag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,23 +81,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         m_controllerPlayerFragment = new ControllerPlayerFragment();
         ChangeStateController();
-
-
-        int permissionStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-
-        if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE);
-        }
-
-        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
-
-            CreateMusicFiles();
-            m_pathTextView = findViewById(R.id.pathShow);
-            m_mainView = findViewById(R.id.playList);
-            CreateAdapter();
-            CreateBroadCast();
-            ShowCurrentDir();
-        }
     }
 
     private void CreateBroadCast() {
@@ -139,7 +121,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         registerReceiver(m_broadcastReceiver, intentFilter);
     }
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -147,8 +128,30 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (m_broadcastReceiver != null) unregisterReceiver(m_broadcastReceiver);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-    private void StartUART() {
+        int permissionStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_CODE_PERMISSION_READ_EXTERNAL_STORAGE);
+        }
+
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
+
+            CreateMusicFiles();
+            m_pathTextView = findViewById(R.id.pathShow);
+            m_mainView = findViewById(R.id.playList);
+            CreateAdapter();
+            CreateBroadCast();
+            ShowCurrentDir();
+        }
+
+    }
+
+    private void StartUART()
+    {
         SendInfoFoldersToComPort();
         SendInfoTracksToComPort();
     }
@@ -203,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         stopService(intentMP);
         Intent intentUART = new Intent(this, UARTService.class);
         stopService(intentUART);
+        finish();
         System.exit(0);
     }
 

@@ -50,6 +50,14 @@
             android:name=".SettingActivity"
             android:launchMode="singleTop"
             android:screenOrientation="portrait" />
+
+
+        <receiver android:name=".RemoteControlReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
