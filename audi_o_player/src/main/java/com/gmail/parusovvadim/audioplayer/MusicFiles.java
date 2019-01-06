@@ -9,7 +9,7 @@ import java.util.Vector;
 public class MusicFiles
 {
     // Номер для новой папки
-    int m_newFolderNumber = 0;
+    private int m_newFolderNumber = 0;
     // Мап для хранения папок
     private Vector<NodeDirectory> m_mapFolders = new Vector<>();
     // Мап для хранения треков
@@ -19,17 +19,17 @@ public class MusicFiles
     // Мар с для доступа к по пути
     private HashMap<String, NodeDirectory> m_mapPaths = new HashMap<>();
 
-    public Vector<NodeDirectory> GetFolders()
+    Vector<NodeDirectory> GetFolders()
     {
         return m_mapFolders;
     }
 
-    public MusicFiles(String rootPathFolder)
+    MusicFiles(String rootPathFolder)
     {
         GetAllFiles(rootPathFolder, 0);
     }
 
-    public NodeDirectory GetParentFolder(NodeDirectory childFolder)
+    NodeDirectory GetParentFolder(NodeDirectory childFolder)
     {
         if(childFolder == null) return null;
 
@@ -52,15 +52,14 @@ public class MusicFiles
         return "";
     }
 
-    public NodeDirectory GetTrack(int parentNumber, int number)
+    NodeDirectory GetTrack(int parentNumber, int number)
     {
         if(m_mapTracks.containsKey(parentNumber))
         {
             Vector<NodeDirectory> listTracks = m_mapTracks.get(parentNumber);
             if(number < listTracks.size() && number >= 0)
             {
-                NodeDirectory track = listTracks.get(number);
-                return track;
+                return listTracks.get(number);
             }
         }
         return null;
@@ -74,7 +73,7 @@ public class MusicFiles
         return new Vector<>();
     }
 
-    public Vector<NodeDirectory> GetAllFiles(int parentFolder)
+    Vector<NodeDirectory> GetAllFiles(int parentFolder)
     {
         Vector<NodeDirectory> dataFales = new Vector<NodeDirectory>();
         if(m_mapChaldeanFolders.containsKey(parentFolder))
@@ -85,7 +84,7 @@ public class MusicFiles
         return dataFales;
     }
 
-    public Vector<NodeDirectory> GetTracks(int parentFolder)
+    Vector<NodeDirectory> GetTracks(int parentFolder)
     {
         if(m_mapTracks.containsKey(parentFolder)) return m_mapTracks.get(parentFolder);
 
@@ -98,13 +97,13 @@ public class MusicFiles
         return (node != null) ? node.GetParentNumber() : -1;
     }
 
-    public int GetNumber(String dirPath)
+    private int GetNumber(String dirPath)
     {
         NodeDirectory node = m_mapPaths.get(dirPath);
         return (node != null) ? node.GetNumber() : -1;
     }
 
-    public int GetNumberTracks(int number)
+    private int GetNumberTracks(int number)
     {
         NodeDirectory folder = m_mapFolders.get(number);
         return folder.GetNumberTracks();

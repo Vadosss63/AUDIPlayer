@@ -124,7 +124,7 @@ class NotificationSoundControl {
 
         Intent intentPause = new Intent(m_service, MPlayer.class);
         intentPause.putExtra("CMD", MPlayer.CMD_PAUSE);
-        m_pendPause = PendingIntent.getService((Context) m_service, requestCode.Pause.ordinal(), intentPause, PendingIntent.FLAG_UPDATE_CURRENT);
+        m_pendPause = PendingIntent.getService(m_service, requestCode.Pause.ordinal(), intentPause, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent intentExit = new Intent(MainActivity.BROADCAST_ACTION);
         intentExit.putExtra("CMD", MainActivity.CMD_EXIT);

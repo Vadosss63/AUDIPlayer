@@ -9,12 +9,12 @@ public class Folder implements NodeDirectory
     private boolean m_isFolderUp = false;
     private String m_path;
 
-    public Folder(String name)
+    Folder(String name)
     {
         this.name = name;
     }
 
-    public void setPath(String path) {
+    void setPath(String path) {
         this.m_path = path;
     }
 
@@ -22,15 +22,15 @@ public class Folder implements NodeDirectory
         this.number = number;
     }
 
-    public void setParentNumber(int parentNumber) {
+    void setParentNumber(int parentNumber) {
         this.parentNumber = parentNumber;
     }
 
-    public void setNumberTracks(int numberTracks) {
+    void setNumberTracks(int numberTracks) {
         this.numberTracks = numberTracks;
     }
 
-    public void setIsFolderUp(boolean isFolderUp) {
+    void setIsFolderUp(boolean isFolderUp) {
         this.m_isFolderUp = isFolderUp;
     }
 

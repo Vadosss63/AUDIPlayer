@@ -373,7 +373,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     // Отправка выбранного трека
-    private void SelectedTrack() {
+    private void SelectedTrack()
+    {
         Intent intent = new Intent(this, MPlayer.class);
         intent.putExtra(getString(R.string.CMD), MPlayer.CMD_SELECT_TRACK);
         intent.putExtra("folder", m_currentTrack.GetParentNumber());
@@ -392,7 +393,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Vector<NodeDirectory> folders = m_musicFiles.GetFolders();
         EncoderByteMainHeader.EncoderListTracks encoderListTracks = new EncoderByteMainHeader.EncoderListTracks();
 
-        for (NodeDirectory folder : folders) {
+        for (NodeDirectory folder : folders)
+        {
             encoderListTracks.AddHeader(folder.GetNumber());
             Vector<NodeDirectory> tracks = m_musicFiles.GetTracks(folder.GetNumber());
             for (NodeDirectory track : tracks) {

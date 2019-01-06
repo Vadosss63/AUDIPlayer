@@ -6,13 +6,13 @@ import android.os.Handler;
 import com.ftdi.j2xx.D2xxManager;
 import com.ftdi.j2xx.FT_Device;
 
-public class UARTPort
+class UARTPort
 {
     private Context DeviceUARTContext;
 
     private Runnable m_readRunnable = null;
 
-    byte[] m_readDataByte = new byte[0];
+    private byte[] m_readDataByte = new byte[0];
 
     private D2xxManager m_managerDevice;
     private FT_Device ftDev = null;
@@ -23,55 +23,55 @@ public class UARTPort
 
     private String m_textLog;
 
-    static int m_isEnableRead = 1;
+    private static int m_isEnableRead = 1;
 
-    /*local variables*/ int m_baudRate = 115200; /*baud rate*/
-    byte m_stopBit = 1; /*1:1stop bits, 2:2 stop bits*/
-    byte m_dataBit = 8; /*8:8bit, 7: 7bit*/
-    byte m_parity = 0;  /* 0: none, 1: odd, 2: even, 3: mark, 4: space*/
-    byte m_flowControl = 0; /*0:none, 1: flow control(CTS,RTS)*/
+    /*local variables*/
+    private int m_baudRate = 115200; /*baud rate*/
+    private byte m_stopBit = 1; /*1:1stop bits, 2:2 stop bits*/
+    private byte m_dataBit = 8; /*8:8bit, 7: 7bit*/
+    private byte m_parity = 0;  /* 0: none, 1: odd, 2: even, 3: mark, 4: space*/
+    private byte m_flowControl = 0; /*0:none, 1: flow control(CTS,RTS)*/
     int m_portNumber = 1; /*port number*/
 
     private static final int m_readLength = 512;
-    private int m_readCount = 0;
     private int m_isAvailable = 0;
     private byte[] m_readData;
     private boolean m_isStartReadThread = false;
     private ReadThread m_readThread;
     private boolean m_isUartConfigured = false;
 
-    public boolean GetIsUartConfigured()
+    boolean GetIsUartConfigured()
     {
         return m_isUartConfigured;
     }
 
-    public static Boolean GetIsEnableRead()
+    private static Boolean GetIsEnableRead()
     {
         return m_isEnableRead == 1;
     }
 
-    public byte[] GetReadDataByte()
+    byte[] GetReadDataByte()
     {
         return m_readDataByte;
     }
 
-    public String GetTextLog()
+    String GetTextLog()
     {
         return m_textLog;
     }
 
 
-    public UARTPort()
+    UARTPort()
     {
     }
 
-    public void SetReadRunnable(Runnable runnable)
+    void SetReadRunnable(Runnable runnable)
     {
         this.m_readRunnable = runnable;
         ReadData();
     }
 
-    public Boolean ConnectToManager(Context context)
+    Boolean ConnectToManager(Context context)
     {
         DeviceUARTContext = context;
         try
@@ -86,7 +86,7 @@ public class UARTPort
         return true;
     }
 
-    public void Connect()
+    void Connect()
     {
         m_devCount = 0;
         CreateDeviceList();
@@ -97,14 +97,14 @@ public class UARTPort
         }
     }
 
-    public Boolean WriteData(byte[] OutData)
+    Boolean WriteData(byte[] OutData)
     {
         if(!CheckDeviceToWrite()) return false;
         SendMessage(OutData);
         return true;
     }
 
-    public boolean ReadData()
+    boolean ReadData()
     {
         if(!CheckDevice()) return false;
 
@@ -136,7 +136,7 @@ public class UARTPort
     {
         if(!CheckDevice()) return false;
 
-        if(ftDev.isOpen() == false)
+        if(!ftDev.isOpen())
         {
             m_textLog = "SendMessage: device not open";
             return false;
@@ -152,7 +152,7 @@ public class UARTPort
             return false;
         }
 
-        if(m_isUartConfigured == false)
+        if(!m_isUartConfigured)
         {
             m_textLog = "UART not configure yet...";
             return false;
@@ -174,7 +174,7 @@ public class UARTPort
         }
     }
 
-    public void DisconnectFunction()
+    void DisconnectFunction()
     {
         m_devCount = -1;
         m_currentIndex = -1;
@@ -191,7 +191,7 @@ public class UARTPort
         {
             synchronized(ftDev)
             {
-                if(true == ftDev.isOpen())
+                if(ftDev.isOpen())
                 {
                     ftDev.close();
                 }
@@ -228,12 +228,12 @@ public class UARTPort
             return;
         }
 
-        if(true == ftDev.isOpen())
+        if(ftDev.isOpen())
         {
             m_currentIndex = m_openIndex;
             m_textLog = ("open device port(" + tmpProtNumber + ") OK");
 
-            if(false == m_isStartReadThread)
+            if(!m_isStartReadThread)
             {
                 m_readThread = new ReadThread(new Handler());
                 m_readThread.start();
@@ -347,7 +347,7 @@ public class UARTPort
         @Override
         public void run()
         {
-            while(true == m_isStartReadThread)
+            while(m_isStartReadThread)
             {
                 try
                 {
@@ -367,8 +367,7 @@ public class UARTPort
 
                         m_readDataByte = new byte[m_isAvailable];
 
-                        for(int i = 0; i < m_isAvailable; i++)
-                            m_readDataByte[i] = m_readData[i];
+                        System.arraycopy(m_readData, 0, m_readDataByte, 0, m_isAvailable);
 
                         m_handler.post(m_readRunnable);
                     }

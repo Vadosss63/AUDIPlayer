@@ -12,7 +12,7 @@ public class Track implements NodeDirectory
         this.name = name;
     }
 
-    public void setPath(String path)
+    void setPath(String path)
     {
         this.m_path = path;
     }

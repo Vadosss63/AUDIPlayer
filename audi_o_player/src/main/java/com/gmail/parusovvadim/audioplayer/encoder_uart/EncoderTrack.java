@@ -13,15 +13,13 @@ public class EncoderTrack
 
     public int GetFolder()
     {
-        int numberFolder;
-        numberFolder = convertToInt(0);
+        int numberFolder = convertToInt(0);
         return numberFolder;
     }
 
     public int GetTrackNumber()
     {
-        int trackNumber = 0;
-        trackNumber = convertToInt(2);
+        int trackNumber = convertToInt(2);
         return trackNumber;
     }
 

@@ -59,7 +59,6 @@ public class EncoderMainHeader
         m_vectorHeader.add(b0);
     }
 
-    // TODO как - то расчитать CRC
     private byte CheckSum()
     {
         byte sum = 0;

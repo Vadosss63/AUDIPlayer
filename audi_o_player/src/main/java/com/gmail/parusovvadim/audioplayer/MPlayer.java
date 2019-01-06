@@ -18,9 +18,8 @@ import android.util.Log;
 
 import java.io.IOException;
 
-public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener {
-
-
+public class MPlayer extends Service implements OnCompletionListener, MediaPlayer.OnErrorListener
+{
     static final public int CMD_SELECT_TRACK = 0x05;
     static final public int CMD_PLAY = 0x06;
     static final public int CMD_PAUSE = 0x07;
@@ -57,7 +56,8 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     private SettingApp m_settingApp;
 
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
         super.onCreate();
         m_settingApp = new SettingApp(this);
         m_audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -73,82 +73,92 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(Intent intent, int flags, int startId)
+    {
         ParserCMD(intent);
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
-    public void onDestroy() {
+    public void onDestroy()
+    {
         super.onDestroy();
 
-        if (m_mediaPlayer != null)
-            m_mediaPlayer.release();
+        if(m_mediaPlayer != null) m_mediaPlayer.release();
 
         AbandonAudioFocus();
         StopPlayback();
         UnregisterRemountControl();
     }
 
-    private void AbandonAudioFocus() {
-        if (m_afLiListener != null)
-            m_audioManager.abandonAudioFocus(m_afLiListener);
+    private void AbandonAudioFocus()
+    {
+        if(m_afLiListener != null) m_audioManager.abandonAudioFocus(m_afLiListener);
     }
 
     @Nullable
     @Override
-    public IBinder onBind(Intent intent) {
+    public IBinder onBind(Intent intent)
+    {
         return null;
     }
 
-    private void ShowNotificationPlay() {
-
+    private void ShowNotificationPlay()
+    {
         m_notificationSoundControl.ShowNotificationPlay(m_currentTrack);
     }
 
-    private void ShowNotificationPause() {
-
+    private void ShowNotificationPause()
+    {
         m_notificationSoundControl.ShowNotificationPause(m_currentTrack);
     }
 
-    public void Play() {
-
+    public void Play()
+    {
         StartPlayback();
         m_audioManager.requestAudioFocus(m_afLiListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
         m_mediaPlayer.start();
         ShowNotificationPlay();
     }
 
-    public void Pause() {
+    public void Pause()
+    {
         StopPlayback();
         m_mediaPlayer.pause();
         ShowNotificationPause();
     }
 
-    public void Stop() {
+    public void Stop()
+    {
         StopPlayback();
         AbandonAudioFocus();
         m_mediaPlayer.stop();
         ShowNotificationPause();
     }
 
-    public void PlayNext() {
-        if (m_currentTrack != null) {
+    public void PlayNext()
+    {
+        if(m_currentTrack != null)
+        {
             int indexTrack = m_currentTrack.GetNumber() + 1;
             SelectTrack(m_currentTrack.GetParentNumber(), indexTrack);
         }
     }
 
-    public void PlayPrevious() {
-        if (m_currentTrack != null) {
+    public void PlayPrevious()
+    {
+        if(m_currentTrack != null)
+        {
             int indexTrack = m_currentTrack.GetNumber() - 1;
             SelectTrack(m_currentTrack.GetParentNumber(), indexTrack);
         }
     }
 
-    public boolean SelectTrack(int folder, int track) {
+    public boolean SelectTrack(int folder, int track)
+    {
         NodeDirectory trackNode = m_musicFiles.GetTrack(folder, track);
-        if (trackNode != null) {
+        if(trackNode != null)
+        {
             // запускаем трек
             m_currentTrack = trackNode;
             StartPlayer();
@@ -157,37 +167,44 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         return false;
     }
 
-    private void StartPlayer() {
+    private void StartPlayer()
+    {
         // Устанавливаем дорожу
         SetupPlayer(m_currentTrack.GetPathDir());
         Play();
     }
 
-    public boolean IsPlay() {
+    public boolean IsPlay()
+    {
         return m_mediaPlayer.isPlaying();
     }
 
     // получение в времени в мсек
-    public int GetCurrentPosition() {
+    public int GetCurrentPosition()
+    {
         return m_mediaPlayer.getCurrentPosition();
     }
 
     // Установка громкости плеера
-    public void SetVolume(float leftVolume, float rightVolume) {
+    public void SetVolume(float leftVolume, float rightVolume)
+    {
         m_mediaPlayer.setVolume(leftVolume, rightVolume);
     }
 
     // открывает деректорию с файлами
-    private void CreateMusicFiles() {
+    private void CreateMusicFiles()
+    {
         String m_dirRoot = Environment.getExternalStorageDirectory().getPath();
         String dirPath = m_dirRoot + m_rootPath;
         m_musicFiles = new MusicFiles(dirPath);
     }
 
-    private void CreateTime() {
-        m_runnable = () -> {
+    private void CreateTime()
+    {
+        m_runnable = ()->{
 
-            if (IsPlay()) {
+            if(IsPlay())
+            {
                 int time = GetCurrentPosition();
                 Intent intent = new Intent(MainActivity.BROADCAST_ACTION);
                 intent.putExtra("CMD", CMD_SEND_TIME);
@@ -211,34 +228,41 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     // создает плеер
-    private void CreatePlayer() {
+    private void CreatePlayer()
+    {
         m_mediaPlayer = new MediaPlayer();
         // Устанавливаем наблюдателя по оканчанию дорожки
         m_mediaPlayer.setOnCompletionListener(this);
     }
 
     // Устанавливаем дорожку для запуска плеера
-    private void SetupPlayer(String audio) {
-        try {
+    private void SetupPlayer(String audio)
+    {
+        try
+        {
             m_mediaPlayer.reset();
             m_mediaPlayer.setDataSource(audio);
             m_mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             m_mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             m_mediaPlayer.prepare();
 
-        } catch (IOException e) {
+        } catch(IOException e)
+        {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void onCompletion(MediaPlayer mp) {
+    public void onCompletion(MediaPlayer mp)
+    {
         PlayNext();
     }
 
-    private void ParserCMD(Intent intent) {
+    private void ParserCMD(Intent intent)
+    {
         int cmd = intent.getIntExtra("CMD", 0);
-        switch (cmd) {
+        switch(cmd)
+        {
             case CMD_NEXT:
                 PlayNext();
                 break;
@@ -253,13 +277,11 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
                 Play();
                 break;
             case CMD_PLAY_PAUSE:
-
-                if (IsPlay()) {
-                    Log.d("MyLogs", "pause");
-
+                if(IsPlay())
+                {
                     Pause();
-                } else {
-                    Log.d("MyLogs", "play");
+                } else
+                {
                     Play();
                 }
                 break;
@@ -267,7 +289,8 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
             case CMD_CHANGE_ROOT:
                 ChangeRoot();
                 break;
-            case CMD_SELECT_TRACK: {
+            case CMD_SELECT_TRACK:
+            {
                 int folder = intent.getIntExtra("folder", -1);
                 int track = intent.getIntExtra("track", 0) - 1;
                 SelectTrack(folder, track);
@@ -279,7 +302,8 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
         }
     }
 
-    private void ChangeRoot() {
+    private void ChangeRoot()
+    {
         m_settingApp.LoadSetting();
         m_musicFiles = new MusicFiles(m_settingApp.GetAbsolutePath());
         SelectTrack(1, 0);
@@ -287,16 +311,21 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
     }
 
     @Override
-    public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+    public boolean onError(MediaPlayer mediaPlayer, int i, int i1)
+    {
         return false;
     }
 
-    class AFListener implements AudioManager.OnAudioFocusChangeListener {
+    // действия при смене источника воспроизведения
+    class AFListener implements AudioManager.OnAudioFocusChangeListener
+    {
 
         @Override
-        public void onAudioFocusChange(int i) {
+        public void onAudioFocusChange(int i)
+        {
 
-            switch (i) {
+            switch(i)
+            {
                 case AudioManager.AUDIOFOCUS_LOSS:
                     Pause();
                     break;
@@ -308,55 +337,72 @@ public class MPlayer extends Service implements OnCompletionListener, MediaPlaye
                     break;
 
                 case AudioManager.AUDIOFOCUS_GAIN:
-                    if (!IsPlay())
-                        Play();
+//                    if(!IsPlay()) Play();
                     SetVolume(1.0f, 1.0f);
                     break;
             }
         }
     }
 
-    private void RegisterRemountControl() {
+    // Управление кнопками воспроизведения
+    private void RegisterRemountControl()
+    {
 
-        try {
+        try
+        {
             m_receiverComponent = new ComponentName(getPackageName(), RemoteControlReceiver.class.getName());
             m_audioManager.registerMediaButtonEventReceiver(m_receiverComponent);
-        } catch (IllegalArgumentException e) {
+        } catch(IllegalArgumentException e)
+        {
 
         }
     }
 
-    private void UnregisterRemountControl() {
-        try {
+    private void UnregisterRemountControl()
+    {
+        try
+        {
             m_audioManager.unregisterMediaButtonEventReceiver(m_receiverComponent);
-        } catch (IllegalArgumentException e) {
+        } catch(IllegalArgumentException e)
+        {
         }
     }
 
-    private class NoisyAudioStreamReceiver extends BroadcastReceiver {
+
+    // Остановка плеера при смене источника воспроизведения
+    private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+
+    private class NoisyAudioStreamReceiver extends BroadcastReceiver
+    {
 
         @Override
-        public void onReceive(Context context, Intent intent) {
-            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+        public void onReceive(Context context, Intent intent)
+        {
+            if(AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()))
+            {
                 Pause();
             }
         }
     }
 
-    private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-
-    private void StartPlayback() {
-        try {
+    private void StartPlayback()
+    {
+        try
+        {
             registerReceiver(m_noisyAudioStreamReceiver, intentFilter);
-        } catch (IllegalArgumentException ignored) {
+        } catch(IllegalArgumentException ignored)
+        {
 
         }
     }
 
-    private void StopPlayback() {
-        try {
+    private void StopPlayback()
+    {
+        try
+        {
             unregisterReceiver(m_noisyAudioStreamReceiver);
-        } catch (IllegalArgumentException e) {
+        } catch(IllegalArgumentException e)
+        {
 
         }
     }

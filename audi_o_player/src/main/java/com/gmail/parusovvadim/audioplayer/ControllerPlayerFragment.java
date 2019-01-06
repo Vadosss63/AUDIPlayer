@@ -24,6 +24,7 @@ public class ControllerPlayerFragment extends Fragment {
     private Button m_play_pauseButton = null;
     private boolean m_isReceiveTime = false;
 
+    @SuppressLint ("InflateParams")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         if (m_view == null) {

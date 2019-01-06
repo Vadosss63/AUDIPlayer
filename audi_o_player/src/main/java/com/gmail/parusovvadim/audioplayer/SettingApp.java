@@ -8,7 +8,7 @@ import java.io.File;
 
 import static android.content.Context.MODE_PRIVATE;
 
-public class SettingApp {
+class SettingApp {
 
     private final static String SAVED_MUSIC_PATH = "music_path";
 
@@ -19,27 +19,27 @@ public class SettingApp {
     private String m_defaultPath = "/Music";
     private String m_storageDirectory;
 
-    public SettingApp(Context context) {
+    SettingApp(Context context) {
         m_context = context;
         m_storageDirectory = Environment.getExternalStorageDirectory().getPath();
     }
 
-    public String GetTrimmPath(String path)
+    String GetTrimmPath(String path)
     {
         return path.replace(m_storageDirectory,"");
     }
 
-    public String GetStorageDirectory()
+    String GetStorageDirectory()
     {
         return m_storageDirectory;
     }
 
-    public void SetMusicPath(String path) {
+    void SetMusicPath(String path) {
         m_pathMusicFiles = m_pathMusicFiles.replace(m_storageDirectory, "");
         m_pathMusicFiles = path;
     }
 
-    public String GetAbsolutePath()
+    String GetAbsolutePath()
     {
         if(m_pathMusicFiles.isEmpty())
         {
@@ -50,18 +50,18 @@ public class SettingApp {
     }
 
 
-    public String GetMusicPath() {
+    String GetMusicPath() {
         return m_pathMusicFiles;
     }
 
-    public void SaveSetting() {
+    void SaveSetting() {
         m_setting = m_context.getSharedPreferences("Setting", MODE_PRIVATE);
         SharedPreferences.Editor ed = m_setting.edit();
         ed.putString(SAVED_MUSIC_PATH, m_pathMusicFiles);
         ed.apply();
     }
 
-    public void LoadSetting() {
+    void LoadSetting() {
 
         m_setting = m_context.getSharedPreferences("Setting", MODE_PRIVATE);
         String savedText = m_setting.getString(SAVED_MUSIC_PATH, "");
